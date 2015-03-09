@@ -4,7 +4,7 @@ class Fluent::RiemannOutput < Fluent::BufferedOutput
   Fluent::Plugin.register_output('riemann', self)
 
   config_param :host, :string, :default => '127.0.0.1'
-  config_param :post, :integer, :default => 5555
+  config_param :port, :integer, :default => 5555
   config_param :timeout, :integer, :default => 5
   config_param :protocol, :string, :default => 'tcp'
   config_param :service, :string, :default => nil
@@ -55,7 +55,13 @@ class Fluent::RiemannOutput < Fluent::BufferedOutput
         :tags => tag.split('.')
       }
 
-      @_fields.each { |k,v| event[v] = record[k] }
+      if @_fields.length
+        @_fields.each { |k,v| event[v] = record[k] }
+      else
+        flat_hash = flatten(record)
+        flat_hash.each { |k,v| event[k] = v }
+      end
+      
       @_types.each { |k,t| event[k] = event[k].send(t) }
 
       client << event
@@ -63,6 +69,17 @@ class Fluent::RiemannOutput < Fluent::BufferedOutput
   end
 
   private
+  
+  def flatten(hash, recursive_key = "")
+     hash.each_with_object({}) do |(k, v), ret|
+       key = recursive_key + k.to_s
+       if v.is_a? Hash
+         ret.merge! flatten(v, key + ".")
+       else
+         ret[key] = v
+       end
+     end
+   end
 
   def parse_map(map, &block)
     Hash[map.split(',').map do |m|

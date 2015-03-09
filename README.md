@@ -30,6 +30,9 @@ Or install it yourself as:
       flush_interval 10s
     </match>
 
+`fields` is optional. If not specified then all fields in the record are written, 
+nested objects are flattened e.g. `foo: { bar: 'baz' }` becomes `'foo.bar': 'baz'`
+
 ## Contributing
 
 1. Fork it ( http://github.com/wkf/fluent-plugin-riemann/fork )
